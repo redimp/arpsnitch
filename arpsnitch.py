@@ -35,14 +35,18 @@ def arp_ping(network, verbose=0, timeout=2):
     return hosts
 
 if __name__ == "__main__":
-    if not os.geteuid() == 0:
-        error("{} must be run as root.".format(sys.argv[0]))
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+            description='arpsnitch.py is a tool for checking hosts on the network via arp',
+            epilog='Note that arpsnitch needs to be run as root.',
+            )
     parser.add_argument("--debug", "-d", help="Debug mode", action="store_true")
     parser.add_argument("--verbose", "-v", help="Verbose mode", action="store_true")
-    parser.add_argument("--config", "-c", help="configuration file", type=str, required=True)
-    parser.add_argument("--network", "-n", help="network to ping, e.g. 192.168.0.1/24", type=str, required=False)
+    parser.add_argument("--config", "-c", help="configuration file, e.g. /tmp/arpsnitch.yml", type=str, required=True)
+    parser.add_argument("--network", "-n", help="network to monitor, e.g. 192.168.0.1/24", type=str, required=False)
     args = parser.parse_args()
+
+    if not os.geteuid() == 0:
+        error("{} must be run as root.".format(sys.argv[0]))
 
     if args.network is not None:
         # test if this looks valid
