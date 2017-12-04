@@ -6,11 +6,11 @@ arp pings.
 
 ## Installation
 
-TODO
+arpsnitch is not yet on pypi, so you have to install it manually.
 ```bash
 $ git clone git@github.com:redimp/arpsnitch.git
-$ cd arpsnitch.git
-$ pip install -e .
+$ cd arpsnitch
+$ python setup.py install
 ```
 
 ## Usage
@@ -48,13 +48,13 @@ file:
 ```
 
 If a new mac address appears, the output looks like:
-```
+```bash
 $ arpsnitch.py -n 192.168.0.1/24 -c /tmp/arpsnitch.yml
 aa:bb:cc:dd:ee:ff (notebook.vmdgrid): new
 ```
 
 If a machine is not discoverable the output looks like:
-```
+```bash
 $ arpsnitch.py -n 192.168.0.1/24 -c /tmp/arpsnitch.yml
 aa:bb:cc:dd:ee:ff (notebook.vmdgrid): missing. last seen: 2017-12-04T16:30:02
 ```
