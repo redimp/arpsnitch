@@ -115,7 +115,8 @@ if __name__ == "__main__":
                     config[network][hwaddr]['ip'] = ip
                 if len(notifications[hwaddr])>0:
                     # print notifications
-                    print "{} ({}): {}".format(hwaddr,hostname,", ".join(notifications[hwaddr]))
+                    if not config[network][hwaddr]['ignore'] and not args.verbose:
+                        print "{} ({}): {}".format(hwaddr,hostname,", ".join(notifications[hwaddr]))
                 elif args.verbose:
                     print "{} ({}): ok".format(hwaddr,hostname)
             else:
@@ -129,6 +130,7 @@ if __name__ == "__main__":
                         'alias': [],
                         'comment': '',
                         'status':'alive',
+                        'ignore':False,
                     }
                 print "{} ({}): new".format(hwaddr,hostname)
         # check every hosts we know, if the host was updated
