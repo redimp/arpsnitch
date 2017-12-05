@@ -43,6 +43,11 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", "-v", help="Verbose mode", action="store_true")
     parser.add_argument("--config", "-c", help="configuration file, e.g. /tmp/arpsnitch.yml", type=str, required=True)
     parser.add_argument("--network", "-n", help="network to monitor, e.g. 192.168.0.1/24", type=str, required=False)
+    parser.add_argument("--timeout", "-t", help="time to wait for a response (for the arp ping)",
+            type=int,
+            default=2,
+            required=False)
+
     args = parser.parse_args()
 
     if not os.geteuid() == 0:
@@ -73,13 +78,13 @@ if __name__ == "__main__":
         if args.network not in config:
             config[args.network] = {}
 
-    now = datetime.utcnow().replace(microsecond=0).isoformat()
+    now = datetime.now().replace(microsecond=0).isoformat()
 
     notifications = {}
 
     for network in config.iterkeys():
         # ping network
-        hosts = arp_ping(network, timeout=1, verbose = args.debug)
+        hosts = arp_ping(network, timeout=args.timeout, verbose=args.debug)
         # update hosts
         for hwaddr, ip in hosts:
             notifications[hwaddr] = []
