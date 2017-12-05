@@ -97,13 +97,14 @@ if __name__ == "__main__":
             except:
                 hostname = ip
             if hwaddr in config[network]:
-                # update date
-                config[network][hwaddr]['last_seen'] = now
                 # check status
                 if config[network][hwaddr]['status'] != 'alive':
                     # add notification
-                    notifications[hwaddr].append("status {} -> {}".format(config[network][hwaddr]['status'],'alive'))
+                    notifications[hwaddr].append("status {} -> {} (missing since {})".format(config[network][hwaddr]['status'],'alive', config[network][hwaddr]['last_seen']))
                     config[network][hwaddr]['status'] = 'alive'
+                # update date
+                config[network][hwaddr]['last_seen'] = now
+                # check hostname
                 if hostname != config[network][hwaddr]['hostname']:
                     # track old hostname as alias
                     if config[network][hwaddr]['hostname'] not in config[network][hwaddr]['alias']:
