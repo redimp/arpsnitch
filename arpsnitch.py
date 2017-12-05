@@ -70,14 +70,16 @@ if __name__ == "__main__":
     config = yaml.load(configstr, Loader=Loader)
     if config is None:
         config = {}
-    else:
-        # TODO check config
-        pass
 
     # handle --network
     if args.network is not None:
         if args.network not in config:
             config[args.network] = {}
+
+    if len(config) == 0:
+        error("No networks configured. For the first run add --network.")
+
+    # TODO check config
 
     now = datetime.now().replace(microsecond=0).isoformat()
 
