@@ -83,3 +83,12 @@ My suggestion is to set this up as cron job e.g.
 # /etc/cron.d/arpsnitch
 */5 * * * * root [ -x /usr/local/bin/arpsnitch.py ] && /usr/local/bin/arpsnitch.py -c /tmp/arpsnitch.yml
 ```
+
+
+
+## Todo
+
+- clean up and refactor
+- nicer output
+- daemonize
+- pypi release
