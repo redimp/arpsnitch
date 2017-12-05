@@ -11,7 +11,11 @@ import re
 from datetime import datetime
 import socket
 
-import scapy.all
+from scapy.layers.l2 import arping
+from scapy.all import conf as scapyconf
+# disable scapy promiscuous mode
+scapyconf.sniff_promisc = 0
+
 import yaml
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -27,10 +31,7 @@ def is_cidr(s):
     return m is not None
 
 def arp_ping(network, verbose=0, timeout=2):
-    alive, dead = scapy.all.srp(
-            scapy.all.Ether(dst="ff:ff:ff:ff:ff:ff")/scapy.all.ARP(pdst=network),
-            timeout=timeout,
-            verbose=verbose)
+    alive, dead = arping(net=network, timeout=timeout, verbose=verbose)
     hosts = [(x[1].hwsrc,x[1].psrc) for x in alive]
     return hosts
 
