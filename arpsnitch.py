@@ -33,11 +33,74 @@ def is_cidr(s):
     return m is not None
 
 def arp_ping(network, verbose=0, timeout=2, count=3):
+    """ping network and return a list of tuples (mac-address,ip-address)"""
     hosts = []
     for _ in xrange(count):
         alive, dead = arping(net=network, timeout=timeout, verbose=verbose)
         hosts += [(x[1].hwsrc,x[1].psrc) for x in alive]
     return list(set(hosts))
+
+def get_hostname(ipaddr):
+    # get hostname via socket
+    try:
+        hostname = socket.gethostbyaddr(ip)[0]
+    except:
+        hostname = ip
+    return hostname
+
+def check_host(hwaddr, ipaddr, config, args, timestr):
+    """
+        check host infos against the config
+
+        returns changes, updated_config
+    """
+    changes = []
+    # get hostname
+    hostname = get_hostname(ipaddr)
+    if hwaddr in config:
+        # shortcut
+        c = config[hwaddr]
+        # check status
+        if c['status'] != 'online':
+            changes    += ['offline -> online','offline since {}'.format(c['last_seen'])]
+            c['status'] = 'online'
+        if c['ip']  != ipaddr:
+            changes += ["{} -> {}".format(c['ip'], ipaddr)]
+            if c['ip'] not in c['alias']:
+                c['alias'] += [c['ip']]
+            c['ip']  = ipaddr
+        if c['hostname']  != hostname:
+            changes += ["{} -> {}".format(c['hostname'], hostname)]
+            if c['hostname'] not in c['alias']:
+                c['alias'] += [c['hostname']]
+            c['hostname']  = hostname
+        # update config
+        c['last_seen'] = timestr
+        config[hwaddr] = c
+    else:
+        # add host to config
+        config[hwaddr] = \
+            {
+                'ip' : ipaddr,
+                'hostname' : hostname,
+                'first_seen' : timestr,
+                'last_seen' : timestr,
+                'alias': [],
+                'comment': '',
+                'status':'online',
+                'ignore':False,
+            }
+        changes += ['NEW']
+    return changes, config
+
+def format_changes(hwaddr, notifications, config):
+    if len(notifications)<1 or config['ignore']:
+        return ""
+    fmt = "{:17.17}  {:16.16}   {:47.47}"
+    s = fmt.format(hwaddr, config['hostname'], notifications[0])
+    for msg in notifications[1:]:
+        s+="\n" + fmt.format('', '', msg)
+    return s
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -105,73 +168,27 @@ if __name__ == "__main__":
             hosts = arp_ping(network, timeout=args.timeout, verbose=args.debug)
             # update hosts
             for hwaddr, ip in hosts:
-                notifications[hwaddr] = []
                 if args.debug:
                     print "debug: checking hwaddr={} ip={}".format(hwaddr,ip)
-                # get hostname via socket
-                try:
-                    hostname = socket.gethostbyaddr(ip)[0]
-                except:
-                    hostname = ip
-                if hwaddr in config[network]:
-                    # check status
-                    if config[network][hwaddr]['status'] != 'alive':
-                        # add notification
-                        notifications[hwaddr].append("status {} -> {} (missing since {})".format(config[network][hwaddr]['status'],'alive', config[network][hwaddr]['last_seen']))
-                        config[network][hwaddr]['status'] = 'alive'
-                    # update date
-                    config[network][hwaddr]['last_seen'] = now
-                    # check hostname
-                    if hostname != config[network][hwaddr]['hostname']:
-                        # track old hostname as alias
-                        if config[network][hwaddr]['hostname'] not in config[network][hwaddr]['alias']:
-                            config[network][hwaddr]['alias'].append(config[network][hwaddr]['hostname'])
-                        # add notification
-                        notifications[hwaddr].append(
-                            "hostname {} -> {}".format(config[network][hwaddr]['hostname'],hostname)
-                            )
-                        # update hostname
-                        config[network][hwaddr]['hostname'] = hostname
-                    if ip != config[network][hwaddr]['ip']:
-                        if config[network][hwaddr]['ip'] not in config[network][hwaddr]['alias']:
-                            config[network][hwaddr]['alias'].append(config[network][hwaddr]['ip'])
-                        # add notification
-                        notifications[hwaddr].append(
-                            "ip {} -> {}".format(config[network][hwaddr]['ip'],ip)
-                            )
-                        # update ip
-                        config[network][hwaddr]['ip'] = ip
-                    if len(notifications[hwaddr])>0:
-                        # print notifications
-                        if not config[network][hwaddr]['ignore'] and not args.verbose:
-                            print "{} ({}): {}".format(hwaddr,hostname,", ".join(notifications[hwaddr]))
-                    elif args.verbose:
-                        print "{} ({}): ok".format(hwaddr,hostname)
-                else:
-                    # add new host
-                    config[network][hwaddr] = \
-                        {
-                            'ip' : ip,
-                            'hostname' : hostname,
-                            'first_seen' : now,
-                            'last_seen' : now,
-                            'alias': [],
-                            'comment': '',
-                            'status':'alive',
-                            'ignore':False,
-                        }
-                    print "{} ({}): new".format(hwaddr,hostname)
+                changes, config[network] = check_host(hwaddr, ip, config[network], args, timestr=now) 
+                notifications[hwaddr] = changes
             # check every hosts we know, if the host was updated
             for host in config[network]:
                 if config[network][host]['last_seen'] != now and \
-                        config[network][host]['status'] == 'alive':
+                        config[network][host]['status'] == 'online':
                     # the host is missing
-                    config[network][host]['status'] = 'missing'
-                    print "{} ({}): missing. last seen: {}".format(
-                            host,
-                            config[network][host]['hostname'],
-                            config[network][host]['last_seen'],
-                            )
+                    config[network][host]['status'] = 'offline'
+                    notifications[host] += ['online -> offline']
+                elif args.verbose and len(notifications[host])<1:
+                    notifications[host] += ['ok']
+
+
+            for c in notifications.iterkeys():
+                #print c
+                #print notifications[c]
+                #print config[network][c]
+                s = format_changes(c, notifications[c], config[network][c])
+                print s
 
         if len(config)>0:
             configstr = yaml.dump(config, Dumper=Dumper)
