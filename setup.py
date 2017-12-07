@@ -9,6 +9,6 @@ setup(name='arpsnitch',
       author='Ralph Thesen',
       author_email='mail@redimp.de',
       license='MIT',
-      install_requires=['scapy','pyyaml'],
+      install_requires=['scapy','pyyaml','fasteners'],
       scripts=['arpsnitch.py'],
       zip_safe=False)
