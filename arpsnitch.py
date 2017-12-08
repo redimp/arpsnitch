@@ -180,6 +180,8 @@ if __name__ == "__main__":
                         config[network][host]['status'] == 'online':
                     # the host is missing
                     config[network][host]['status'] = 'offline'
+                    if host not in notifications:
+                        notifications[host] = []
                     notifications[host] += ['online -> offline',
                                             'last seen {}'.format(config[network][host]['last_seen'])]
                 elif args.verbose and len(notifications[host])<1:
