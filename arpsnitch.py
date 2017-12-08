@@ -96,10 +96,10 @@ def check_host(hwaddr, ipaddr, config, args, timestr):
 def format_changes(hwaddr, notifications, config):
     if len(notifications)<1 or config['ignore']:
         return ""
-    fmt = "{:17.17}  {:16.16}   {:47.47}"
-    s = fmt.format(hwaddr, config['hostname'], notifications[0])
+    fmt = "{:17.17}  {:16.16} {:15.15}  {:47.47}\n"
+    s = fmt.format(hwaddr, config['hostname'], config['ip'], notifications[0])
     for msg in notifications[1:]:
-        s+="\n" + fmt.format('', '', msg)
+        s+=fmt.format('', '', '', msg)
     return s
 
 if __name__ == "__main__":
@@ -162,6 +162,8 @@ if __name__ == "__main__":
 
         notifications = {}
 
+        output = ""
+
         for network in config.iterkeys():
             # ping network
             if args.debug: print >>sys.stderr, "debug: arpping", network
@@ -187,8 +189,13 @@ if __name__ == "__main__":
                 #print c
                 #print notifications[c]
                 #print config[network][c]
-                s = format_changes(c, notifications[c], config[network][c])
-                print s
+                output += format_changes(c, notifications[c], config[network][c])
+
+        output = output.strip()
+        if len(output)>0:
+            # add header to output
+            output = "# {}\n# {}\n{}".format(" ".join(sys.argv), now, output)
+            print output
 
         if len(config)>0:
             configstr = yaml.dump(config, Dumper=Dumper)
