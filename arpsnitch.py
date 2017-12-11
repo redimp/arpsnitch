@@ -35,7 +35,9 @@ def is_cidr(s):
 def arp_ping(network, verbose=0, timeout=2, count=3):
     """ping network and return a list of tuples (mac-address,ip-address)"""
     hosts = []
-    for _ in xrange(count):
+    for c in xrange(count):
+        if verbose:
+            print "arp_ping attempt %i" % c
         alive, dead = arping(net=network, timeout=timeout, verbose=verbose)
         hosts += [(x[1].hwsrc,x[1].psrc) for x in alive]
     return list(set(hosts))
@@ -118,6 +120,10 @@ if __name__ == "__main__":
             type=int,
             default=10,
             required=False)
+    parser.add_argument("--count", help="number of arp ping attemps",
+            type=int,
+            default=5,
+            required=False)
 
     args = parser.parse_args()
 
@@ -167,7 +173,7 @@ if __name__ == "__main__":
         for network in config.iterkeys():
             # ping network
             if args.debug: print >>sys.stderr, "debug: arpping", network
-            hosts = arp_ping(network, timeout=args.timeout, verbose=args.debug)
+            hosts = arp_ping(network, timeout=args.timeout, verbose=args.debug, count=args.count)
             # update hosts
             for hwaddr, ip in hosts:
                 if args.debug:
